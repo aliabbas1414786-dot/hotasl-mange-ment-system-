@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HostelConnect - Online Booking</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #6c5ce7;
+            --secondary: #00cec9;
+            --dark-bg: #0f172a;
+            --glass: rgba(255, 255, 255, 0.05);
+            --text: #f8fafc;
+            --danger: #ff7675;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', sans-serif; }
+        body { background: var(--dark-bg); color: var(--text); overflow: hidden; height: 100vh; }
+
+        /* --- LOGIN & SETUP SCREEN --- */
+        #login-screen {
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background: radial-gradient(circle, #1e293b 0%, #0f172a 100%);
+        }
+
+        .login-card {
+            background: var(--glass);
+            padding: 40px;
+            border-radius: 20px;
+            backdrop-filter: blur(15px);
+            border: 1px solid rgba(255,255,255,0.1);
+            width: 100%;
+            max-width: 400px;
+            text-align: center;
+        }
+
+        input, select {
+            width: 100%;
+            padding: 12px;
+            margin: 10px 0;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid #334155;
+            color: white;
+            border-radius: 8px;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 12px;
+            background: var(--primary);
+            border: none;
+            color: white;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: 0.3s;
+        }
+
+        .btn:hover { opacity: 0.9; transform: translateY(-2px); box-shadow: 0 5px 15px rgba(108, 92, 231, 0.3); }
+
+        /* --- DASHBOARD STYLES --- */
+        #main-dashboard { display: none; height: 100vh; }
+        .app-container { display: flex; height: 100%; }
+
+        .sidebar {
+            width: 260px;
+            background: #1e293b;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .sidebar h2 span { color: var(--secondary); }
+
+        .nav-list { list-style: none; margin-top: 40px; flex-grow: 1; }
+        .nav-item {
+            padding: 15px;
+            margin-bottom: 8px;
+            border-radius: 10px;
+            cursor: pointer;
+            color: #94a3b8;
+            transition: 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-item.active, .nav-item:hover { background: var(--primary); color: white; }
+
+        .content-area { flex: 1; padding: 40px; overflow-y: auto; }
+
+        /* --- BOOKING & STAT CARDS --- */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 20px; margin-bottom: 30px; }
+        .stat-card { background: var(--glass); padding: 20px; border-radius: 15px; border: 1px solid rgba(255,255,255,0.1); text-align: center; }
+        .stat-card h3 { font-size: 0.9rem; color: #94a3b8; margin-bottom: 10px; }
+        .stat-card p { font-size: 1.8rem; font-weight: bold; color: var(--secondary); }
+
+        .glass-panel {
+            background: var(--glass);
+            padding: 25px;
+            border-radius: 15px;
+            border: 1px solid rgba(255,255,255,0.05);
+            margin-top: 20px;
+        }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th { text-align: left; color: #94a3b8; padding: 12px; border-bottom: 1px solid #334155; }
+        td { padding: 12px; border-bottom: 1px solid #1e293b; }
+
+        .status-tag { padding: 4px 10px; border-radius: 20px; font-size: 0.8rem; font-weight: bold; }
+        .paid { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+        .pending { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+    </style>
+</head>
+<body>
+
+    <div id="login-screen">
+        <div class="login-card">
+            <h2 id="login-title">Hostel<span>Connect</span></h2>
+            <p id="login-subtext" style="margin-bottom: 10px; color: #94a3b8;">Set up your admin account</p>
+            <form id="loginForm">
+                <input type="text" id="user" placeholder="Create Username" required>
+                <input type="password" id="pass" placeholder="Create Password" required>
+                <button type="submit" id="loginBtn" class="btn">Initialize System</button>
+            </form>
+            <p id="auth-toggle-text" style="margin-top: 15px; font-size: 0.9rem; color: #94a3b8;"></p>
+            <p id="errorMsg" style="color: var(--danger); margin-top: 15px; display: none;">Invalid credentials!</p>
+        </div>
+    </div>
+
+    <div id="main-dashboard">
+        <div class="app-container">
+            <nav class="sidebar">
+                <h2>Hostel<span>Connect</span></h2>
+                <ul class="nav-list">
+                    <li class="nav-item active" onclick="showPage('booking-page')"><i class="fas fa-hotel"></i> Online Booking</li>
+                    <li class="nav-item" onclick="showPage('view-students')"><i class="fas fa-clipboard-list"></i> Booking Status</li>
+                </ul>
+                <div style="background: rgba(0,0,0,0.2); padding: 15px; border-radius: 10px; margin-bottom: 20px;">
+                    <p style="font-size: 0.8rem; color: #94a3b8;">Hostel Fee</p>
+                    <p style="font-weight: bold; color: var(--secondary);">$500 / Month</p>
+                </div>
+                <button class="btn" style="background: #ef4444;" onclick="logout()">Logout</button>
+            </nav>
+
+            <main class="content-area">
+                <div class="stats-grid">
+                    <div class="stat-card"><h3>Total Rooms</h3><p>50</p></div>
+                    <div class="stat-card"><h3>Booked</h3><p id="booked-count">0</p></div>
+                    <div class="stat-card"><h3>Available</h3><p id="available-count">50</p></div>
+                </div>
+
+                <div id="booking-page" class="page">
+                    <h1>Online Room Booking</h1>
+                    <div class="glass-panel">
+                        <form id="bookingForm">
+                            <div style="display: flex; gap: 10px;">
+                                <input type="text" id="stuName" placeholder="Enter Your Name" required>
+                                <input type="text" id="stuID" placeholder="ID Number (Identity)" required>
+                            </div>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="number" id="stuRoom" placeholder="Choose Room Number (1-50)" min="1" max="50" required>
+                                <select id="stuStatus">
+                                    <option value="Pending">Pay Later (Pending)</option>
+                                    <option value="Paid">Pay Now ($500)</option>
+                                </select>
+                            </div>
+                            <button type="submit" class="btn" style="margin-top: 10px; background: var(--secondary);">Confirm Booking</button>
+                        </form>
+                    </div>
+                </div>
+
+                <div id="view-students" class="page" style="display: none;">
+                    <h1>Current Booking Records</h1>
+                    <div class="glass-panel">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Identity ID</th>
+                                    <th>Guest Name</th>
+                                    <th>Room #</th>
+                                    <th>Payment Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody id="studentTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        const TOTAL_ROOMS = 50;
+        let students = JSON.parse(localStorage.getItem('hostelDB')) || [];
+        let adminCreds = JSON.parse(localStorage.getItem('adminCreds')) || null;
+        let isLoginMode = true;
+
+        // --- AUTH TOGGLE LOGIC ---
+        function updateAuthUI() {
+            const subtext = document.getElementById('login-subtext');
+            const btn = document.getElementById('loginBtn');
+            const toggleText = document.getElementById('auth-toggle-text');
+            const userInp = document.getElementById('user');
+            const passInp = document.getElementById('pass');
+
+            if (!adminCreds) {
+                // First Time Mode
+                subtext.innerText = "Set up your admin account";
+                btn.innerText = "Initialize System";
+                toggleText.innerHTML = "";
+                userInp.placeholder = "Create Username";
+                passInp.placeholder = "Create Password";
+            } else {
+                // Toggle between Login and Register
+                if (isLoginMode) {
+                    subtext.innerText = "Login to manage your bookings";
+                    btn.innerText = "Login";
+                    toggleText.innerHTML = `Don't have an account? <a href="#" onclick="toggleAuth()" style="color: var(--secondary); text-decoration: none;">Sign Up here</a>`;
+                    userInp.placeholder = "Username";
+                    passInp.placeholder = "Password";
+                } else {
+                    subtext.innerText = "Create a new account";
+                    btn.innerText = "Sign Up";
+                    toggleText.innerHTML = `Already have an account? <a href="#" onclick="toggleAuth()" style="color: var(--secondary); text-decoration: none;">Login here</a>`;
+                    userInp.placeholder = "New Username";
+                    passInp.placeholder = "New Password";
+                }
+            }
+        }
+
+        function toggleAuth() {
+            isLoginMode = !isLoginMode;
+            updateAuthUI();
+        }
+
+        window.onload = updateAuthUI;
+
+        document.getElementById('loginForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const u = document.getElementById('user').value;
+            const p = document.getElementById('pass').value;
+
+            if (!adminCreds || !isLoginMode) {
+                // Register / Initialize
+                adminCreds = { user: u, pass: p };
+                localStorage.setItem('adminCreds', JSON.stringify(adminCreds));
+                alert("Account saved successfully!");
+                isLoginMode = true; // Switch to login mode after register
+                enterDashboard();
+            } else {
+                // Regular login check
+                if (u === adminCreds.user && p === adminCreds.pass) {
+                    enterDashboard();
+                } else {
+                    document.getElementById('errorMsg').style.display = 'block';
+                }
+            }
+        });
+
+        function enterDashboard() {
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('main-dashboard').style.display = 'block';
+            updateStats();
+            renderTable();
+        }
+
+        // --- NAVIGATION ---
+        function showPage(pageId) {
+            document.querySelectorAll('.page').forEach(p => p.style.display = 'none');
+            document.getElementById(pageId).style.display = 'block';
+            document.querySelectorAll('.nav-item').forEach(item => {
+                item.classList.remove('active');
+                if(item.getAttribute('onclick').includes(pageId)) item.classList.add('active');
+            });
+        }
+
+        // --- BOOKING LOGIC ---
+        
+        document.getElementById('bookingForm').addEventListener('submit', (e) => {
+            e.preventDefault();
+            const roomNo = document.getElementById('stuRoom').value;
+
+            if (students.some(s => s.room === roomNo)) {
+                alert("Sorry, Room " + roomNo + " is already booked!");
+                return;
+            }
+
+            const newBooking = {
+                id: document.getElementById('stuID').value,
+                name: document.getElementById('stuName').value,
+                room: roomNo,
+                status: document.getElementById('stuStatus').value,
+                key: Date.now()
+            };
+
+            students.push(newBooking);
+            localStorage.setItem('hostelDB', JSON.stringify(students));
+            e.target.reset();
+            alert('Booking confirmed for Room ' + roomNo);
+            updateStats();
+            renderTable();
+        });
+
+        function updateStats() {
+            const booked = students.length;
+            document.getElementById('booked-count').innerText = booked;
+            document.getElementById('available-count').innerText = TOTAL_ROOMS - booked;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('studentTableBody');
+            tbody.innerHTML = '';
+            students.forEach(s => {
+                tbody.innerHTML += `
+                    <tr>
+                        <td>${s.id}</td>
+                        <td>${s.name}</td>
+                        <td>Room ${s.room}</td>
+                        <td><span class="status-tag ${s.status.toLowerCase()}">${s.status}</span></td>
+                        <td><button onclick="deleteBooking(${s.key})" style="color:var(--danger); background:none; border:none; cursor:pointer;"><i class="fas fa-trash"></i> Cancel</button></td>
+                    </tr>`;
+            });
+        }
+
+        function deleteBooking(key) {
+            students = students.filter(s => s.key !== key);
+            localStorage.setItem('hostelDB', JSON.stringify(students));
+            updateStats();
+            renderTable();
+        }
+
+        function logout() { location.reload(); }
+    </script>
+</body>
+</html>
